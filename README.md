@@ -108,6 +108,10 @@ Use the [Azure pricing calculator](https://azure.microsoft.com/en-us/pricing/cal
 >⚠️ **Important:** To avoid unnecessary costs, remember to take down your app if it's no longer in use,
 either by deleting the resource group in the Portal or running `azd down`.
 
+ 
+### Deploying Feature Branches
+Use the `frontend-dev-slot.yml` workflow to build the React frontend from `Feature-001` and update the dev slot with the resulting Docker image. This allows testing UI changes before merging into `main`.
+
 <br /><br />
 <h2><img src="./docs/images/readme/business-scenario.png" width="48" />
 Business Scenario
