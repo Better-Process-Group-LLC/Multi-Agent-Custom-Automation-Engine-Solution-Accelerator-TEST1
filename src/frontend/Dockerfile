@@ -28,9 +28,6 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 WORKDIR /app
 
-# Copy Python project definition files
-COPY pyproject.toml requirements.txt* uv.lock* ./
-
 # Install Python dependencies using UV
 RUN --mount=type=cache,target=/root/.cache/uv \
     if [ -f "requirements.txt" ]; then \
