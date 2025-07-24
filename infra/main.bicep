@@ -201,7 +201,7 @@ param containerAppConfiguration containerAppConfigurationType = {
   concurrentRequests: '100'
   containerCpu: '2.0'
   containerMemory: '4.0Gi'
-  containerImageRegistryDomain: 'biabcontainerreg.azurecr.io'
+  containerImageRegistryDomain: 'macaeregis.azurecr.io'
   containerImageName: 'macaebackend'
   containerImageTag: imageTag
   containerName: 'backend'
@@ -225,7 +225,7 @@ param webSiteConfiguration webSiteConfigurationType = {
   enabled: true
   name: 'app-${solutionPrefix}'
   location: solutionLocation
-  containerImageRegistryDomain: 'biabcontainerreg.azurecr.io'
+  containerImageRegistryDomain: 'macaeregis.azurecr.io'
   containerImageName: 'macaefrontend'
   containerImageTag: imageTag
   containerName: 'backend'
@@ -967,7 +967,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.14.2' = if (container
     containers: [
       {
         name: containerAppConfiguration.?containerName ?? 'backend'
-        image: '${containerAppConfiguration.?containerImageRegistryDomain ?? 'biabcontainerreg.azurecr.io'}/${containerAppConfiguration.?containerImageName ?? 'macaebackend'}:${containerAppConfiguration.?containerImageTag ?? 'latest'}'
+        image: '${containerAppConfiguration.?containerImageRegistryDomain ?? 'macaeregis.azurecr.io'}/${containerAppConfiguration.?containerImageName ?? 'macaebackend'}:${containerAppConfiguration.?containerImageTag ?? 'latest'}'
         resources: {
           //TODO: Make cpu and memory parameterized
           cpu: containerAppConfiguration.?containerCpu ?? '2.0'
@@ -1078,11 +1078,11 @@ module webSite 'br/public:avm/res/web/site:0.15.1' = if (webSiteEnabled) {
     diagnosticSettings: [{ workspaceResourceId: logAnalyticsWorkspaceId }]
     publicNetworkAccess: 'Enabled' //TODO: use Azure Front Door WAF or Application Gateway WAF instead
     siteConfig: {
-      linuxFxVersion: 'DOCKER|${webSiteConfiguration.?containerImageRegistryDomain ?? 'biabcontainerreg.azurecr.io'}/${webSiteConfiguration.?containerImageName ?? 'macaefrontend'}:${webSiteConfiguration.?containerImageTag ?? 'latest'}'
+      linuxFxVersion: 'DOCKER|${webSiteConfiguration.?containerImageRegistryDomain ?? 'macaeregis.azurecr.io'}/${webSiteConfiguration.?containerImageName ?? 'macaefrontend'}:${webSiteConfiguration.?containerImageTag ?? 'latest'}'
     }
     appSettingsKeyValuePairs: {
       SCM_DO_BUILD_DURING_DEPLOYMENT: 'true'
-      DOCKER_REGISTRY_SERVER_URL: 'https://${webSiteConfiguration.?containerImageRegistryDomain ?? 'biabcontainerreg.azurecr.io'}'
+      DOCKER_REGISTRY_SERVER_URL: 'https://${webSiteConfiguration.?containerImageRegistryDomain ?? 'macaeregis.azurecr.io'}'
       WEBSITES_PORT: '3000'
       WEBSITES_CONTAINER_START_TIME_LIMIT: '1800' // 30 minutes, adjust as needed
       BACKEND_API_URL: 'https://${containerApp.outputs.fqdn}'
@@ -1634,7 +1634,7 @@ type containerAppConfigurationType = {
   @description('Optional. The name given to the Container App.')
   containerName: string?
 
-  @description('Optional. The container registry domain of the container image to be used by the Container App. Default to `biabcontainerreg.azurecr.io`')
+  @description('Optional. The container registry domain of the container image to be used by the Container App. Default to `macaeregis.azurecr.io`')
   containerImageRegistryDomain: string?
 
   @description('Optional. The name of the container image to be used by the Container App.')
@@ -1704,7 +1704,7 @@ type webSiteConfigurationType = {
   @description('Optional. The name given to the Container App.')
   containerName: string?
 
-  @description('Optional. The container registry domain of the container image to be used by the Web Site. Default to `biabcontainerreg.azurecr.io`')
+  @description('Optional. The container registry domain of the container image to be used by the Web Site. Default to `macaeregis.azurecr.io`')
   containerImageRegistryDomain: string?
 
   @description('Optional. The name of the container image to be used by the Web Site.')

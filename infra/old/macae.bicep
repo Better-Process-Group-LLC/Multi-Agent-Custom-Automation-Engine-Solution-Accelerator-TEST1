@@ -36,7 +36,7 @@ param resourceSize {
 
 
 // var appVersion = 'latest'
-// var resgistryName = 'biabcontainerreg'
+// var resgistryName = 'macaeregis'
 // var dockerRegistryUrl = 'https://${resgistryName}.azurecr.io'
 var placeholderImage = 'hello-world:latest'
 

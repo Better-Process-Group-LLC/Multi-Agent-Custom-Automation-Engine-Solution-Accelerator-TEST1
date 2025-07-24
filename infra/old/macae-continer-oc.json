@@ -78,7 +78,7 @@
   },
   "variables": {
     "appVersion": "latest",
-    "resgistryName": "biabcontainerreg",
+    "resgistryName": "macaeregis",
     "dockerRegistryUrl": "[format('https://{0}.azurecr.io', variables('resgistryName'))]",
     "backendDockerImageURL": "[format('{0}.azurecr.io/macaebackend:{1}', variables('resgistryName'), variables('appVersion'))]",
     "frontendDockerImageURL": "[format('{0}.azurecr.io/macaefrontend:{1}', variables('resgistryName'), variables('appVersion'))]",

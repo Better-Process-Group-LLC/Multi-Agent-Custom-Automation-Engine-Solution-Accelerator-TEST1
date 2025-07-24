@@ -943,7 +943,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.14.2' = {
       {
         name: 'backend'
         //TODO: Make image parameterized for the registry name and the appversion
-        image: 'biabcontainerreg.azurecr.io/macaebackend:fnd01'
+        image: 'macaeregis.azurecr.io/macaebackend:fnd01'
         resources: {
           //TODO: Make cpu and memory parameterized
           cpu: '2.0'
@@ -1076,7 +1076,7 @@ module webSite 'br/public:avm/res/web/site:0.15.1' = {
     serverFarmResourceId: webServerfarm.outputs.resourceId
     appInsightResourceId: applicationInsights.outputs.resourceId
     siteConfig: {
-      linuxFxVersion: 'DOCKER|biabcontainerreg.azurecr.io/macaefrontend:fnd01'
+      linuxFxVersion: 'DOCKER|macaeregis.azurecr.io/macaefrontend:fnd01'
     }
     publicNetworkAccess: 'Enabled' //TODO: use Azure Front Door WAF or Application Gateway WAF instead
     //privateEndpoints: [{ subnetResourceId: virtualNetwork.outputs.subnetResourceIds[0] }]
@@ -1084,7 +1084,7 @@ module webSite 'br/public:avm/res/web/site:0.15.1' = {
     appSettingsKeyValuePairs: union(
       {
         SCM_DO_BUILD_DURING_DEPLOYMENT: 'true'
-        DOCKER_REGISTRY_SERVER_URL: 'https://biabcontainerreg.azurecr.io'
+        DOCKER_REGISTRY_SERVER_URL: 'https://macaeregis.azurecr.io'
         WEBSITES_PORT: '3000'
         WEBSITES_CONTAINER_START_TIME_LIMIT: '1800' // 30 minutes, adjust as needed
         BACKEND_API_URL: 'https://${containerApp.outputs.fqdn}'
