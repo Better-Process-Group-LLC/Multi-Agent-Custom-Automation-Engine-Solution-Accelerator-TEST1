@@ -80,6 +80,8 @@ Follow the quick deploy steps on the deployment guide to deploy this solution to
 
 ### Developing on `features-001`
 
+When collaborating through Better Process Group's GitHub Enterprise server, clone or fork this repository from `https://git.betterprocessgroup.com` so that internal CI/CD runs correctly. Work from the `features-001` branch before submitting changes back to `main`.
+
 This repository uses a development slot in Azure App Service for fast validation.
 Push commits to the `features-001` branch and the code will automatically deploy to the
 [`dev-slot` environment](https://app-macae-novkmzdbkmlk-dev-slot.azurewebsites.net).
