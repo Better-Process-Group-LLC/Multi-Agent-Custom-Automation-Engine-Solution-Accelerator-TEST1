@@ -30,10 +30,11 @@ COPY --from=builder /bin/uv /bin/uv
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Ensure main.py exists at /app/main.py
-# If your main.py is in src/backend, copy it explicitly
-COPY src/backend/main.py /app/main.py
+
+# Ensure frontend_server.py exists at /app/frontend_server.py
+COPY src/backend/frontend_server.py /app/frontend_server.py
 
 EXPOSE 8000
 ENV WEBSITES_PORT=8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Ensure the startup command matches the file/module
+CMD ["uvicorn", "frontend_server:app", "--host", "0.0.0.0", "--port", "8000"]
