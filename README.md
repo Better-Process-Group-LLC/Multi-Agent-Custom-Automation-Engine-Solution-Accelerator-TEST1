@@ -77,7 +77,32 @@ Follow the quick deploy steps on the deployment guide to deploy this solution to
 
 | [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/Multi-Agent-Custom-Automation-Engine-Solution-Accelerator) | [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/microsoft/Multi-Agent-Custom-Automation-Engine-Solution-Accelerator) |
 |---|---|
- 
+
+### Developing on `features-001`
+
+When collaborating through Better Process Group's GitHub Enterprise server, clone or fork this repository from `https://git.betterprocessgroup.com` so that internal CI/CD runs correctly. Work from the `features-001` branch before submitting changes back to `main`.
+
+This repository uses a development slot in Azure App Service for fast validation.
+Push commits to the `features-001` branch and the code will automatically deploy to the
+[`dev-slot` environment](https://app-macae-novkmzdbkmlk-dev-slot.azurewebsites.net).
+
+1. Create a feature branch if you haven't already:
+   ```bash
+   git checkout -b features-001
+   ```
+2. Commit and push your changes.
+3. GitHub Actions will build the containers and publish them to the development slot.
+4. Browse to `https://app-macae-novkmzdbkmlk-dev-slot.azurewebsites.net` to see your changes.
+
+To test changes locally without deploying, you can run the backend and frontend directly:
+
+```bash
+cd src/backend && python app_kernel.py
+# In another terminal
+cd src/frontend && python frontend_server.py
+```
+Then navigate to <http://localhost:3000>.
+
 <br/>
 
 > ⚠️ **Important: Check Azure OpenAI Quota Availability**
