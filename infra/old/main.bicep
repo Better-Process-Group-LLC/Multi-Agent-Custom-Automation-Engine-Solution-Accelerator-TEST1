@@ -1085,7 +1085,7 @@ module webSite 'br/public:avm/res/web/site:0.15.1' = {
       {
         SCM_DO_BUILD_DURING_DEPLOYMENT: 'true'
         DOCKER_REGISTRY_SERVER_URL: 'https://macaeregis.azurecr.io'
-        WEBSITES_PORT: '3000'
+        WEBSITES_PORT: '80'
         WEBSITES_CONTAINER_START_TIME_LIMIT: '1800' // 30 minutes, adjust as needed
         BACKEND_API_URL: 'https://${containerApp.outputs.fqdn}'
         AUTH_ENABLED: 'false'
