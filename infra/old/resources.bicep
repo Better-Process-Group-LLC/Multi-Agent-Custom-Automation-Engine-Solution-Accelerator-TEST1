@@ -182,7 +182,7 @@ module frontend 'br/public:avm/res/app/container-app:0.8.0' = {
   name: 'frontend'
   params: {
     name: 'frontend'
-    ingressTargetPort: 3000
+  ingressTargetPort: 80
     scaleMinReplicas: 1
     scaleMaxReplicas: 10
     secrets: {
@@ -212,7 +212,7 @@ module frontend 'br/public:avm/res/app/container-app:0.8.0' = {
           }
           {
             name: 'PORT'
-            value: '3000'
+              value: '80'
           }
         ],
         frontendEnv,

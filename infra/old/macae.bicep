@@ -337,7 +337,7 @@ resource frontendAppService 'Microsoft.Web/sites@2021-02-01' = {
         }
         {
           name: 'WEBSITES_PORT'
-          value: '3000'
+          value: '80'
         }
         {
           name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'  // Add startup time limit
