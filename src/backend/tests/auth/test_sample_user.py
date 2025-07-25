@@ -54,7 +54,7 @@ def test_sample_user_values():
         sample_user["X-Ms-Client-Principal-Id"]
         == "00000000-0000-0000-0000-000000000000"
     )
-    assert sample_user["X-Ms-Client-Principal-Name"] == "testusername@constoso.com"
+    assert sample_user["X-Ms-Client-Principal-Name"] == "testusername@betterprocessgroup.com"
     assert sample_user["X-Forwarded-Proto"] == "https"
 
 
