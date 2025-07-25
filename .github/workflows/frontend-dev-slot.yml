@@ -9,7 +9,7 @@ on:
 env:
   ACR_LOGIN_SERVER: macaeregis.azurecr.io
   IMAGE_NAME: macaefrontend
-  TAG: feature-001
+  TAG: Feature-001
 
 jobs:
   build-and-deploy:
