@@ -1,0 +1,34 @@
+name: Deploy features-001 to dev slot
+
+on:
+  workflow_run:
+    workflows: ["Build Docker and Optional Push"]
+    branches: ["features-001"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Deploy container image to dev slot
+        run: |
+          az webapp config container set \
+            --name app-macae-novkmzdbkmlk \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --slot dev-slot \
+            --docker-custom-image-name ${{ secrets.ACR_LOGIN_SERVER }}/macaefrontend:features-001 \
+            --docker-registry-server-url https://${{ secrets.ACR_LOGIN_SERVER }} \
+            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
+            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
+      - name: Restart app
+        run: az webapp restart --name app-macae-novkmzdbkmlk --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --slot dev-slot
+
