@@ -1,9 +1,17 @@
 # File: test_message.py
 
+import os
+import sys
 import uuid
-from src.backend.models.messages import (
+
+# Ensure src/backend is on the Python path for imports
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+
+from src.backend.models.messages_kernel import (
     DataType,
-    BAgentType,
+    AgentType,
     StepStatus,
     PlanStatus,
     HumanFeedbackStatus,
@@ -20,7 +28,7 @@ def test_enum_values():
     """Test enumeration values for consistency."""
     assert DataType.session == "session"
     assert DataType.plan == "plan"
-    assert BAgentType.human_agent == "HumanAgent"
+    assert AgentType.HUMAN.value == "Human_Agent"
     assert StepStatus.completed == "completed"
     assert PlanStatus.in_progress == "in_progress"
     assert HumanFeedbackStatus.requested == "requested"
@@ -31,7 +39,7 @@ def test_plan_with_steps_update_counts():
     step1 = Step(
         plan_id=str(uuid.uuid4()),
         action="Review document",
-        agent=BAgentType.human_agent,
+        agent=AgentType.HUMAN,
         status=StepStatus.completed,
         session_id=str(uuid.uuid4()),
         user_id=str(uuid.uuid4()),
@@ -39,7 +47,7 @@ def test_plan_with_steps_update_counts():
     step2 = Step(
         plan_id=str(uuid.uuid4()),
         action="Approve document",
-        agent=BAgentType.hr_agent,
+        agent=AgentType.HR,
         status=StepStatus.failed,
         session_id=str(uuid.uuid4()),
         user_id=str(uuid.uuid4()),
@@ -78,10 +86,10 @@ def test_action_request_creation():
         plan_id=str(uuid.uuid4()),
         session_id=str(uuid.uuid4()),
         action="Review and approve",
-        agent=BAgentType.procurement_agent,
+        agent=AgentType.PROCUREMENT,
     )
     assert action_request.action == "Review and approve"
-    assert action_request.agent == BAgentType.procurement_agent
+    assert action_request.agent == AgentType.PROCUREMENT
 
 
 def test_human_feedback_creation():
@@ -114,7 +122,7 @@ def test_step_defaults():
     step = Step(
         plan_id=str(uuid.uuid4()),
         action="Prepare report",
-        agent=BAgentType.generic_agent,
+        agent=AgentType.GENERIC,
         session_id=str(uuid.uuid4()),
         user_id=str(uuid.uuid4()),
     )

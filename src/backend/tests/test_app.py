@@ -4,6 +4,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+# Ensure src/backend is on the Python path for imports
+sys.path.append(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+
 # Mock Azure dependencies to prevent import errors
 sys.modules["azure.monitor"] = MagicMock()
 sys.modules["azure.monitor.events.extension"] = MagicMock()
@@ -23,7 +28,7 @@ os.environ["AZURE_OPENAI_ENDPOINT"] = "https://mock-openai-endpoint"
 
 # Mock telemetry initialization to prevent errors
 with patch("azure.monitor.opentelemetry.configure_azure_monitor", MagicMock()):
-    from src.backend.app import app
+    from src.backend.app_kernel import app
 
 # Initialize FastAPI test client
 client = TestClient(app)
@@ -36,10 +41,6 @@ def mock_dependencies(monkeypatch):
         "src.backend.auth.auth_utils.get_authenticated_user_details",
         lambda headers: {"user_principal_id": "mock-user-id"},
     )
-    monkeypatch.setattr(
-        "src.backend.utils.retrieve_all_agent_tools",
-        lambda: [{"agent": "test_agent", "function": "test_function"}],
-    )
 
 
 def test_input_task_invalid_json():
@@ -47,7 +48,7 @@ def test_input_task_invalid_json():
     invalid_json = "Invalid JSON data"
 
     headers = {"Authorization": "Bearer mock-token"}
-    response = client.post("/input_task", data=invalid_json, headers=headers)
+    response = client.post("/api/input_task", data=invalid_json, headers=headers)
 
     # Assert response for invalid JSON
     assert response.status_code == 422
@@ -62,7 +63,7 @@ def test_input_task_missing_description():
     }
 
     headers = {"Authorization": "Bearer mock-token"}
-    response = client.post("/input_task", json=input_task, headers=headers)
+    response = client.post("/api/input_task", json=input_task, headers=headers)
 
     # Assert response for missing description
     assert response.status_code == 422
@@ -79,7 +80,7 @@ def test_input_task_empty_description():
     """Tests if /input_task handles an empty description."""
     empty_task = {"session_id": None, "user_id": "mock-user-id", "description": ""}
     headers = {"Authorization": "Bearer mock-token"}
-    response = client.post("/input_task", json=empty_task, headers=headers)
+    response = client.post("/api/input_task", json=empty_task, headers=headers)
 
     assert response.status_code == 422
     assert "detail" in response.json()  # Assert error message for missing description

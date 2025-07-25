@@ -1,8 +1,11 @@
-# tests/test_config.py
-from unittest.mock import patch
-import os
+"""Tests for application configuration."""
 
-# Mock environment variables globally
+import os
+from unittest.mock import patch
+
+from src.backend.app_config import AppConfig
+from src.backend.config_kernel import Config
+
 MOCK_ENV_VARS = {
     "COSMOSDB_ENDPOINT": "https://mock-cosmosdb.documents.azure.com:443/",
     "COSMOSDB_DATABASE": "mock_database",
@@ -16,47 +19,33 @@ MOCK_ENV_VARS = {
     "AZURE_CLIENT_SECRET": "mock-client-secret",
 }
 
-with patch.dict(os.environ, MOCK_ENV_VARS):
-    from src.backend.config import (
-        Config,
-        GetRequiredConfig,
-        GetOptionalConfig,
-        GetBoolConfig,
-    )
-
-
 @patch.dict(os.environ, MOCK_ENV_VARS)
 def test_get_required_config():
-    """Test GetRequiredConfig."""
-    assert GetRequiredConfig("COSMOSDB_ENDPOINT") == MOCK_ENV_VARS["COSMOSDB_ENDPOINT"]
-
+    cfg = AppConfig()
+    assert cfg._get_required("COSMOSDB_ENDPOINT") == MOCK_ENV_VARS["COSMOSDB_ENDPOINT"]
 
 @patch.dict(os.environ, MOCK_ENV_VARS)
 def test_get_optional_config():
-    """Test GetOptionalConfig."""
-    assert GetOptionalConfig("NON_EXISTENT_VAR", "default_value") == "default_value"
-    assert (
-        GetOptionalConfig("COSMOSDB_DATABASE", "default_db")
-        == MOCK_ENV_VARS["COSMOSDB_DATABASE"]
-    )
-
+    cfg = AppConfig()
+    assert cfg._get_optional("NON_EXISTENT_VAR", "default_value") == "default_value"
+    assert cfg._get_optional("COSMOSDB_DATABASE", "default_db") == MOCK_ENV_VARS["COSMOSDB_DATABASE"]
 
 @patch.dict(os.environ, MOCK_ENV_VARS)
 def test_get_bool_config():
-    """Test GetBoolConfig."""
-    with patch.dict("os.environ", {"FEATURE_ENABLED": "true"}):
-        assert GetBoolConfig("FEATURE_ENABLED") is True
-    with patch.dict("os.environ", {"FEATURE_ENABLED": "false"}):
-        assert GetBoolConfig("FEATURE_ENABLED") is False
-    with patch.dict("os.environ", {"FEATURE_ENABLED": "1"}):
-        assert GetBoolConfig("FEATURE_ENABLED") is True
-    with patch.dict("os.environ", {"FEATURE_ENABLED": "0"}):
-        assert GetBoolConfig("FEATURE_ENABLED") is False
+    cfg = AppConfig()
+    with patch.dict(os.environ, {"FEATURE_ENABLED": "true"}):
+        assert cfg._get_bool("FEATURE_ENABLED") is True
+    with patch.dict(os.environ, {"FEATURE_ENABLED": "false"}):
+        assert cfg._get_bool("FEATURE_ENABLED") is False
+    with patch.dict(os.environ, {"FEATURE_ENABLED": "1"}):
+        assert cfg._get_bool("FEATURE_ENABLED") is True
+    with patch.dict(os.environ, {"FEATURE_ENABLED": "0"}):
+        assert cfg._get_bool("FEATURE_ENABLED") is False
 
-
-@patch("config.DefaultAzureCredential")
+@patch("src.backend.app_config.DefaultAzureCredential")
+@patch.dict(os.environ, MOCK_ENV_VARS)
 def test_get_azure_credentials_with_env_vars(mock_default_cred):
-    """Test Config.GetAzureCredentials with explicit credentials."""
-    with patch.dict(os.environ, MOCK_ENV_VARS):
-        creds = Config.GetAzureCredentials()
-        assert creds is not None
+    cfg = AppConfig()
+    creds = cfg.get_azure_credentials()
+    assert creds is not None
+    mock_default_cred.assert_called()

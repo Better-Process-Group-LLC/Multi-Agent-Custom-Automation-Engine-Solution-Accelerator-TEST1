@@ -86,6 +86,8 @@ This repository uses a development slot in Azure App Service for fast validation
 Push commits to the `features-001` branch and the code will automatically deploy to the
 [`dev-slot` environment](https://app-macae-novkmzdbkmlk-dev-slot.azurewebsites.net).
 
+For a step-by-step tutorial on editing in Visual Studio Codespaces and previewing your changes before committing, see [Codespaces Developer Guide](./docs/CodespacesDeveloperGuide.md).
+
 1. Create a feature branch if you haven't already:
    ```bash
    git checkout -b features-001
