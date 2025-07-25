@@ -5,7 +5,7 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 # Load environment variables from .env file
@@ -28,6 +28,10 @@ INDEX_HTML = os.path.join(BUILD_DIR, "index.html")
 app.mount(
     "/assets", StaticFiles(directory=os.path.join(BUILD_DIR, "assets")), name="assets"
 )
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 
 @app.get("/")
@@ -59,4 +63,4 @@ async def serve_app(full_path: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=3000)
+    uvicorn.run(app, host="0.0.0.0", port=80)

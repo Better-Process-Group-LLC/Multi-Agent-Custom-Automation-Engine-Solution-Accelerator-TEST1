@@ -73,12 +73,12 @@ RUN mkdir -p /app/logs && chown -R appuser:appuser /app/logs
 # Use non-root user for security
 USER appuser
 
-# Expose port
-EXPOSE 3000
+# Expose port for Azure App Service
+EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:80/health || exit 1
 
 # Run the application with uvicorn
-CMD ["/usr/local/bin/uvicorn", "frontend_server:app", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["/usr/local/bin/uvicorn", "frontend_server:app", "--host", "0.0.0.0", "--port", "80"]
