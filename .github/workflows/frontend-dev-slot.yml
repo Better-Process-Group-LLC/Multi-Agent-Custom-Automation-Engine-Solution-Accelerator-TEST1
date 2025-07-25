@@ -1,4 +1,4 @@
-name: Deploy Feature-001 Frontend to Dev Slot
+name: Deploy Feature-001 Frontend to dev-slot
 
 on:
   push:
@@ -46,10 +46,10 @@ jobs:
 
       - name: Update dev slot container image
         run: |
-          az webapp config container set \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --name ${{ secrets.AZURE_WEBAPP_NAME }} \
-            --slot dev \
+            az webapp config container set \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --name ${{ secrets.AZURE_WEBAPP_NAME }} \
+              --slot dev-slot \
             --docker-custom-image-name ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.TAG }} \
             --docker-registry-server-url https://${{ env.ACR_LOGIN_SERVER }} \
             --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
@@ -57,4 +57,4 @@ jobs:
 
       - name: Restart dev slot
         run: |
-          az webapp restart --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_WEBAPP_NAME }} --slot dev
+            az webapp restart --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_WEBAPP_NAME }} --slot dev-slot
