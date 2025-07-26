@@ -32,14 +32,19 @@ jobs:
 
       - name: Run Quota Check
         id: quota-check
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_REGIONS: ${{ secrets.AZURE_REGIONS }}
         run: |
-          export AZURE_CLIENT_ID=${{ secrets.AZURE_CLIENT_ID }}
-          export AZURE_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}
-          export AZURE_CLIENT_SECRET=${{ secrets.AZURE_CLIENT_SECRET }}
-          export AZURE_SUBSCRIPTION_ID="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
           export GPT_MIN_CAPACITY="150"
-          export AZURE_REGIONS="${{ vars.AZURE_REGIONS }}"
-
+          if [ -n "$AZURE_REGIONS" ]; then
+            echo "AZURE_REGIONS=${AZURE_REGIONS}" >> $GITHUB_ENV
+          else
+            echo "AZURE_REGIONS secret is not set."
+            exit 1
+          fi
           chmod +x infra/scripts/checkquota.sh
           if ! infra/scripts/checkquota.sh; then
             # If quota check fails due to insufficient quota, set the flag
@@ -78,9 +83,13 @@ jobs:
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
           az --version  # Verify installation
 
-      - name: Login to Azure
-        run: |
-          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
 
       - name: Install Bicep CLI
         run: az bicep install
@@ -138,7 +147,7 @@ jobs:
               gptModelVersion="2024-08-06" \
               imageTag="${IMAGE_TAG}" \
               useWafAlignedArchitecture=false \
-              aiDeploymentsLocation='${{ env.AZURE_LOCATION }}' \
+              aiDeploymentsLocation="${{ env.AZURE_LOCATION }}" \
               gptModelCapacity=150 \
               logAnalyticsWorkspaceConfiguration='{"dataRetentionInDays": 30, "existingWorkspaceResourceId": ""}' \
               applicationInsightsConfiguration='{"retentionInDays": 30}' \
@@ -204,10 +213,13 @@ jobs:
         run: |
           curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
           az --version
-      - name: Login to Azure
-        run: |
-          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
-          az account set --subscription "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
 
       - name: Extract AI Services and Key Vault Names
         if: always()
@@ -220,7 +232,7 @@ jobs:
           echo "KEYVAULT_NAME=$KEYVAULT_NAME" >> $GITHUB_ENV
           # Extract AI Services names
           echo "Fetching AI Services..."
-          AI_SERVICES=$(az resource list --resource-group '${{ env.RESOURCE_GROUP_NAME }}' --resource-type "Microsoft.CognitiveServices/accounts" --query "[].name" -o tsv)
+          AI_SERVICES=$(az resource list --resource-group "${{ env.RESOURCE_GROUP_NAME }}" --resource-type "Microsoft.CognitiveServices/accounts" --query "[].name" -o tsv)
           # Flatten newline-separated values to space-separated
           AI_SERVICES=$(echo "$AI_SERVICES" | paste -sd ' ' -)
           echo "Detected AI Services: $AI_SERVICES"
@@ -281,7 +293,7 @@ jobs:
             resource_found=false
 
             # Get the list of resources in YAML format again on each retry
-            resource_list=$(az resource list --resource-group ${{ env.RESOURCE_GROUP_NAME }} --output yaml)
+          resource_list=$(az resource list --resource-group ${{ env.RESOURCE_GROUP_NAME }} --output yaml)
 
             # Iterate through the resources to check
             for resource in "${resources_to_check[@]}"; do
@@ -316,14 +328,14 @@ jobs:
         run: |
 
           set -e
-          echo "Azure OpenAI: ${{ env.OPENAI_RESOURCE_NAME }}"
+          echo "Azure OpenAI: ${{ steps.get_openai_resource.outputs.OPENAI_RESOURCE_NAME }}"
 
           # Purge OpenAI Resource
           echo "Purging the OpenAI Resource..."
-          if ! az resource delete --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/providers/Microsoft.CognitiveServices/locations/eastus/resourceGroups/${{ env.RESOURCE_GROUP_NAME }}/deletedAccounts/${{ env.OPENAI_RESOURCE_NAME }} --verbose; then
-            echo "Failed to purge openai resource: ${{ env.OPENAI_RESOURCE_NAME }}"
+          if ! az resource delete --ids /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/providers/Microsoft.CognitiveServices/locations/eastus/resourceGroups/${{ env.RESOURCE_GROUP_NAME }}/deletedAccounts/${{ steps.get_openai_resource.outputs.OPENAI_RESOURCE_NAME }} --verbose; then
+            echo "Failed to purge openai resource: ${{ steps.get_openai_resource.outputs.OPENAI_RESOURCE_NAME }}"
           else
-            echo "Purged the openai resource: ${{ env.OPENAI_RESOURCE_NAME }}"
+            echo "Purged the openai resource: ${{ steps.get_openai_resource.outputs.OPENAI_RESOURCE_NAME }}"
           fi
 
           echo "Resource purging completed successfully"
@@ -342,7 +354,7 @@ jobs:
           )
 
           # Send the notification
-          curl -X POST "${{ secrets.LOGIC_APP_URL }}" \
+          curl -X POST "${{ secrets.AUTO_LOGIC_APP_URL }}" \
             -H "Content-Type: application/json" \
             -d "$EMAIL_BODY" || echo "Failed to send notification"
       - name: Logout from Azure
