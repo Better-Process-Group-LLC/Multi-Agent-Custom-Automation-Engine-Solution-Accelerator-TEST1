@@ -1,17 +1,19 @@
 #!/bin/bash
 
-# List of Azure regions to check for quota (update as needed)
-IFS=', ' read -ra REGIONS <<< "$AZURE_REGIONS"
+
+
 
 SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID}"
 GPT_MIN_CAPACITY="${GPT_MIN_CAPACITY}"
 AZURE_CLIENT_ID="${AZURE_CLIENT_ID}"
 AZURE_TENANT_ID="${AZURE_TENANT_ID}"
 AZURE_CLIENT_SECRET="${AZURE_CLIENT_SECRET}"
+AZURE_LOCATION="${AZURE_LOCATION}"
+
 
 
 echo "🔄 Validating required environment variables..."
-if [[ -z "$SUBSCRIPTION_ID" || -z "$GPT_MIN_CAPACITY" || -z "$REGIONS" ]]; then
+if [[ -z "$SUBSCRIPTION_ID" || -z "$GPT_MIN_CAPACITY" || -z "$AZURE_LOCATION" ]]; then
     echo "❌ ERROR: Missing required environment variables."
     exit 1
 fi
@@ -28,16 +30,17 @@ declare -A MIN_CAPACITY=(
     ["OpenAI.GlobalStandard.gpt-4o"]=$GPT_MIN_CAPACITY
 )
 
-VALID_REGION=""
-for REGION in "${REGIONS[@]}"; do
-    echo "----------------------------------------"
-    echo "🔍 Checking region: $REGION"
 
-    QUOTA_INFO=$(az cognitiveservices usage list --location "$REGION" --output json)
+echo "----------------------------------------"
+echo "🔍 Checking location: $AZURE_LOCATION"
+
+
+    QUOTA_INFO=$(az cognitiveservices usage list --location "$AZURE_LOCATION" --output json)
     if [ -z "$QUOTA_INFO" ]; then
-        echo "⚠️ WARNING: Failed to retrieve quota for region $REGION. Skipping."
-        continue
+        echo "⚠️ WARNING: Failed to retrieve quota for location $AZURE_LOCATION."
+        exit 1
     fi
+
 
     INSUFFICIENT_QUOTA=false
     for MODEL in "${!MIN_CAPACITY[@]}"; do
@@ -47,7 +50,7 @@ for REGION in "${REGIONS[@]}"; do
         ')
 
         if [ -z "$MODEL_INFO" ]; then
-            echo "⚠️ WARNING: No quota information found for model: $MODEL in $REGION. Skipping."
+            echo "⚠️ WARNING: No quota information found for model: $MODEL in $AZURE_LOCATION. Skipping."
             continue
         fi
 
@@ -65,25 +68,17 @@ for REGION in "${REGIONS[@]}"; do
         echo "✅ Model: $MODEL | Used: $CURRENT_VALUE | Limit: $LIMIT | Available: $AVAILABLE"
 
         if [ "$AVAILABLE" -lt "${MIN_CAPACITY[$MODEL]}" ]; then
-            echo "❌ ERROR: $MODEL in $REGION has insufficient quota."
+            echo "❌ ERROR: $MODEL in $AZURE_LOCATION has insufficient quota."
             INSUFFICIENT_QUOTA=true
             break
         fi
     done
 
     if [ "$INSUFFICIENT_QUOTA" = false ]; then
-        VALID_REGION="$REGION"
-        break
+        echo "✅ Location $AZURE_LOCATION has sufficient quota."
+        exit 0
+    else
+        echo "❌ Location $AZURE_LOCATION does not have sufficient quota. Blocking deployment."
+        echo "QUOTA_FAILED=true" >> "$GITHUB_ENV"
+        exit 0
     fi
-
-done
-
-if [ -z "$VALID_REGION" ]; then
-    echo "❌ No region with sufficient quota found. Blocking deployment."
-    echo "QUOTA_FAILED=true" >> "$GITHUB_ENV"
-    exit 0
-else
-    echo "✅ Final Region: $VALID_REGION"
-    echo "VALID_REGION=$VALID_REGION" >> "$GITHUB_ENV"
-    exit 0
-fi

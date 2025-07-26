@@ -107,11 +107,11 @@ jobs:
         id: check_create_rg
         run: |
           set -e
-          rg_exists=$(az group exists --name ${{ env.RESOURCE_GROUP_NAME }})
+          rg_exists=$(az group exists --name ${{ steps.generate_rg_name.outputs.RESOURCE_GROUP_NAME }})
           if [ "$rg_exists" = "false" ]; then
-            az group create --name ${{ env.RESOURCE_GROUP_NAME }} --location ${{ env.AZURE_LOCATION }}
+            az group create --name ${{ steps.generate_rg_name.outputs.RESOURCE_GROUP_NAME }} --location ${{ env.AZURE_LOCATION }}
           fi
-          echo "RESOURCE_GROUP_NAME=${{ env.RESOURCE_GROUP_NAME }}" >> $GITHUB_OUTPUT
+          echo "RESOURCE_GROUP_NAME=${{ steps.generate_rg_name.outputs.RESOURCE_GROUP_NAME }}" >> $GITHUB_OUTPUT
 
       - name: Generate Unique Solution Prefix
         id: generate_solution_prefix
@@ -137,7 +137,7 @@ jobs:
           fi
 
           az deployment group create \
-            --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
+            --resource-group ${{ steps.check_create_rg.outputs.RESOURCE_GROUP_NAME }} \
             --template-file infra/main.bicep \
             --parameters \
               environmentName=${{ env.SOLUTION_PREFIX }} \
@@ -158,7 +158,7 @@ jobs:
       - name: Extract Web App and API App URLs
         id: get_output
         run: |
-          WEBAPP_NAMES=$(az webapp list --resource-group ${{ env.RESOURCE_GROUP_NAME }} --query "[].name" -o tsv)
+          WEBAPP_NAMES=$(az webapp list --resource-group ${{ steps.check_create_rg.outputs.RESOURCE_GROUP_NAME }} --query "[].name" -o tsv)
           for NAME in $WEBAPP_NAMES; do
             if [[ $NAME == app-* ]]; then
               WEBAPP_URL="https://${NAME}.azurewebsites.net"
@@ -170,12 +170,12 @@ jobs:
         id: get_backend_url
         run: |
           CONTAINER_APP_NAME=$(az containerapp list \
-            --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
+            --resource-group ${{ steps.check_create_rg.outputs.RESOURCE_GROUP_NAME }} \
             --query "[0].name" -o tsv)
 
           MACAE_URL_API=$(az containerapp show \
             --name "$CONTAINER_APP_NAME" \
-            --resource-group ${{ env.RESOURCE_GROUP_NAME }} \
+            --resource-group ${{ steps.check_create_rg.outputs.RESOURCE_GROUP_NAME }} \
             --query "properties.configuration.ingress.fqdn" -o tsv)
 
           echo "MACAE_URL_API=https://${MACAE_URL_API}" >> $GITHUB_OUTPUT
