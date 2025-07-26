@@ -16,6 +16,7 @@ on:
 env:
   GPT_MIN_CAPACITY: 150
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  AZURE_LOCATION: eastus2
 
 jobs:
   deploy:
@@ -36,15 +37,8 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          AZURE_REGIONS: ${{ secrets.AZURE_REGIONS }}
         run: |
           export GPT_MIN_CAPACITY="150"
-          if [ -n "$AZURE_REGIONS" ]; then
-            echo "AZURE_REGIONS=${AZURE_REGIONS}" >> $GITHUB_ENV
-          else
-            echo "AZURE_REGIONS secret is not set."
-            exit 1
-          fi
           chmod +x infra/scripts/checkquota.sh
           if ! infra/scripts/checkquota.sh; then
             # If quota check fails due to insufficient quota, set the flag
@@ -88,7 +82,6 @@ jobs:
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Install Bicep CLI
@@ -107,11 +100,13 @@ jobs:
         id: check_create_rg
         run: |
           set -e
-          rg_exists=$(az group exists --name ${{ steps.generate_rg_name.outputs.RESOURCE_GROUP_NAME }})
+          RG_NAME="${RESOURCE_GROUP_NAME:-$RESOURCE_GROUP_NAME}"
+          LOCATION="${AZURE_LOCATION:-eastus2}"
+          rg_exists=$(az group exists --name "$RG_NAME")
           if [ "$rg_exists" = "false" ]; then
-            az group create --name ${{ steps.generate_rg_name.outputs.RESOURCE_GROUP_NAME }} --location ${{ env.AZURE_LOCATION }}
+            az group create --name "$RG_NAME" --location "$LOCATION"
           fi
-          echo "RESOURCE_GROUP_NAME=${{ steps.generate_rg_name.outputs.RESOURCE_GROUP_NAME }}" >> $GITHUB_OUTPUT
+          echo "RESOURCE_GROUP_NAME=$RG_NAME" >> $GITHUB_OUTPUT
 
       - name: Generate Unique Solution Prefix
         id: generate_solution_prefix
@@ -124,30 +119,34 @@ jobs:
       - name: Deploy Bicep Template
         id: deploy
         run: |
-          if [[ "${{ env.BRANCH_NAME }}" == "main" ]]; then
+          if [[ "$BRANCH_NAME" == "main" ]]; then
             IMAGE_TAG="latest"
-          elif [[ "${{ env.BRANCH_NAME }}" == "dev" ]]; then
+          elif [[ "$BRANCH_NAME" == "dev" ]]; then
             IMAGE_TAG="dev"
-          elif [[ "${{ env.BRANCH_NAME }}" == "hotfix" ]]; then
+          elif [[ "$BRANCH_NAME" == "hotfix" ]]; then
             IMAGE_TAG="hotfix"
-          elif [[ "${{ env.BRANCH_NAME }}" == "features-001" ]]; then
+          elif [[ "$BRANCH_NAME" == "features-001" ]]; then
             IMAGE_TAG="features-001"
           else
             IMAGE_TAG="latest"
           fi
 
+          RG_NAME="${RESOURCE_GROUP_NAME:-$RESOURCE_GROUP_NAME}"
+          LOCATION="${AZURE_LOCATION:-eastus2}"
+          SOL_PREFIX="${SOLUTION_PREFIX:-$SOLUTION_PREFIX}"
+
           az deployment group create \
-            --resource-group ${{ steps.check_create_rg.outputs.RESOURCE_GROUP_NAME }} \
+            --resource-group "$RG_NAME" \
             --template-file infra/main.bicep \
             --parameters \
-              environmentName=${{ env.SOLUTION_PREFIX }} \
-              solutionLocation="${{ env.AZURE_LOCATION }}" \
+              environmentName="$SOL_PREFIX" \
+              solutionLocation="$LOCATION" \
               modelDeploymentType="GlobalStandard" \
               gptModelName="gpt-4o" \
               gptModelVersion="2024-08-06" \
-              imageTag="${IMAGE_TAG}" \
+              imageTag="$IMAGE_TAG" \
               useWafAlignedArchitecture=false \
-              aiDeploymentsLocation="${{ env.AZURE_LOCATION }}" \
+              aiDeploymentsLocation="$LOCATION" \
               gptModelCapacity=150 \
               logAnalyticsWorkspaceConfiguration='{"dataRetentionInDays": 30, "existingWorkspaceResourceId": ""}' \
               applicationInsightsConfiguration='{"retentionInDays": 30}' \
@@ -218,7 +217,6 @@ jobs:
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Extract AI Services and Key Vault Names
