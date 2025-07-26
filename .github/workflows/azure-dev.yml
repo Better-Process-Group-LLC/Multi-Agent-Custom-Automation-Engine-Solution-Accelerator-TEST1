@@ -35,6 +35,7 @@ jobs:
           AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
           AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_RESOURCE_GROUP: rg-MACATest1
 
       - name: print result
         run: cat ${{ steps.validation.outputs.resultFile }}
